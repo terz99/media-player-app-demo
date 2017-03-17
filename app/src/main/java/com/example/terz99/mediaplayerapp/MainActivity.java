@@ -6,25 +6,30 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
+
+    private MediaPlayer mediaPlayer;
 
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // get the resource for the audio player
-        final MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.audio_file);
+        mediaPlayer = MediaPlayer.create(this, R.raw.audio_file);
 
         // get the resource for the start button
         // and set click listener
         Button startButton = (Button) findViewById(R.id.button_start);
         startButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                // start the audio
+                // start cthe audio
                 mediaPlayer.start();
+
+                Toast.makeText(MainActivity.this, "Play", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -41,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
                 if(mediaPlayer.isPlaying()){
                     mediaPlayer.pause();
                 }
+
+                Toast.makeText(MainActivity.this, "Stop", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -53,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
                 if(mediaPlayer.isPlaying()){
                     mediaPlayer.pause();
                 }
+
+                Toast.makeText(MainActivity.this, "Pause", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -67,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
                  */
                 int audioDuration = mediaPlayer.getDuration();
                 mediaPlayer.seekTo(audioDuration/2);
+
+                Toast.makeText(MainActivity.this, "You are in the middle of the song now", Toast.LENGTH_SHORT).show();
             }
         });
     }
