@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.terz99.mediaplayerapp.MainActivity"
+    android:orientation="vertical">
+
+    <Button
+        style="@style/style_button"
+        android:text="START"
+        android:id="@+id/button_start"/>
+
+    <Button
+        style="@style/style_button"
+        android:text="STOP"
+        android:id="@+id/button_stop"/>
+
+    <Button
+        style="@style/style_button"
+        android:text="PAUSE"
+        android:id="@+id/button_pause"/>
+
+    <Button
+        style="@style/style_button"
+        android:text="SET TO MID"
+        android:id="@+id/button_set_to_mid"/>
+
+</LinearLayout>
