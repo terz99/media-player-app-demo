@@ -1,7 +1,9 @@
 package com.example.terz99.mediaplayerapp;
 
 import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -24,6 +26,43 @@ public class MainActivity extends AppCompatActivity {
     // the current volume the audio file has
     private int currentVolume;
 
+    // AudioManager instance for managing the audio focus
+    private AudioManager audioManager;
+
+    // Audio Focus change listener
+    AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+
+            if(focusChange == AudioManager.AUDIOFOCUS_GAIN){
+
+                if(mediaPlayer != null){
+                    mediaPlayer.start();
+                }
+            } else if(focusChange == AudioManager.AUDIOFOCUS_LOSS){
+
+                releaseMediaPlayer();
+            } else if(focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ||
+                    focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK){
+
+                if(mediaPlayer != null){
+                    mediaPlayer.pause();
+                }
+            }
+        }
+    };
+
+    // MediaPlayer completion listener - what happens when the audio file finishes playing
+    MediaPlayer.OnCompletionListener mediaPlayerCompletionListener = new MediaPlayer.OnCompletionListener() {
+
+        @Override
+        public void onCompletion(MediaPlayer mp) {
+            // release memory used by the mediaPlayer
+            releaseMediaPlayer();
+        }
+    };
+
 
     /**
      * This method creates the MainActivity
@@ -31,17 +70,15 @@ public class MainActivity extends AppCompatActivity {
      */
     protected void onCreate(final Bundle savedInstanceState) {
 
-
+        // create this activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        // get the resource for the audio player
-        mediaPlayer = MediaPlayer.create(this, R.raw.audio_file);
+        // get system srevice for the AudioManager instance
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         // set the currentVolume to 50
         currentVolume = 50;
-        setVolume(currentVolume);
 
         // find volume TextView
         final TextView textViewVolume = (TextView) findViewById(R.id.textview_volume);
@@ -54,18 +91,23 @@ public class MainActivity extends AppCompatActivity {
         startButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                // start the audio
-                if(mediaPlayer.isPlaying() == false){
+                // get audio focus request
+                int requestResult = audioManager.requestAudioFocus(audioFocusChangeListener,
+                        AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
 
+                // check if audio focus request was GRANTED
+                if(requestResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED){
+
+                    if(mediaPlayer == null){
+                        // get the resource file for the audio if not already got
+                        mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.audio_file);
+                    }
+                    // set the volume before playing
+                    setVolume(currentVolume);
+                    // play the audio file
                     mediaPlayer.start();
-
-                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-
-                        @Override
-                        public void onCompletion(MediaPlayer mp) {
-                            Toast.makeText(MainActivity.this, "I'm done!", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    // set completion listener to the mediaPlayer
+                    mediaPlayer.setOnCompletionListener(mediaPlayerCompletionListener);
                 }
             }
         });
@@ -79,14 +121,19 @@ public class MainActivity extends AppCompatActivity {
         stopButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
+
                 /**
                  * The stop button reset the audio file
                  * so that next time it will play the audio from the beginning
                  */
-                if(mediaPlayer.isPlaying() || mediaPlayer.getCurrentPosition() != 0) {
+                if(mediaPlayer.isPlaying()){
+                    // if the mediaPlayer is playing then pause it
                     mediaPlayer.pause();
-                    mediaPlayer.seekTo(0);
                 }
+                // release the memory used by the audio file
+                releaseMediaPlayer();
             }
         });
 
@@ -98,6 +145,9 @@ public class MainActivity extends AppCompatActivity {
         Button pauseButton = (Button) findViewById(R.id.button_pause);
         pauseButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
 
                 // if alredy playing -> pause the audio
                 if(mediaPlayer.isPlaying()){
@@ -114,6 +164,9 @@ public class MainActivity extends AppCompatActivity {
         final Button setToMidButton = (Button) findViewById(R.id.button_set_to_mid);
         setToMidButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
 
                 /**
                  * Get the duration of the whole song and divide it to 2
@@ -142,8 +195,12 @@ public class MainActivity extends AppCompatActivity {
                  * currentVolume, set the volume and display it to screen
                  */
                 currentVolume = progress;
-                setVolume(currentVolume);
                 textViewVolume.setText(Integer.toString(currentVolume));
+
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
+
+                setVolume(currentVolume);
             }
 
 
@@ -155,8 +212,12 @@ public class MainActivity extends AppCompatActivity {
                  * currentVolume, set the volume and display it to screen
                  */
                 currentVolume = seekBar.getProgress();
-                setVolume(currentVolume);
                 textViewVolume.setText(Integer.toString(currentVolume));
+
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
+
+                setVolume(currentVolume);
             }
 
 
@@ -168,8 +229,12 @@ public class MainActivity extends AppCompatActivity {
                  * currentVolume, set the volume and display it to screen
                  */
                 currentVolume = seekBar.getProgress();
-                setVolume(currentVolume);
                 textViewVolume.setText(Integer.toString(currentVolume));
+
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
+
+                setVolume(currentVolume);
             }
         });
 
@@ -182,11 +247,16 @@ public class MainActivity extends AppCompatActivity {
 
             public void onClick(View v) {
 
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
+
+                // get the new position for the mediaPlayer
                 int newPosition = mediaPlayer.getCurrentPosition() - 5000;
                 if(newPosition < 0){
+                    // if the position is negative we need to put it to 0
                     newPosition = 0;
                 }
-
+                // set the mediaPlayer to the new position
                 mediaPlayer.seekTo(newPosition);
             }
         });
@@ -201,11 +271,17 @@ public class MainActivity extends AppCompatActivity {
 
             public void onClick(View v) {
 
+                // if mediaPlayer is not initialized then do nothing (return)
+                if(mediaPlayer == null) return;
+
+                // get the new position for the mediaPlayer
                 int newPosition = mediaPlayer.getCurrentPosition() + 5000;
                 if(newPosition > mediaPlayer.getDuration()){
+                    // if the position exceeds the duration of the mediaPlayer we need to put it
+                    // to the end
                     newPosition = mediaPlayer.getDuration();
                 }
-
+                // set the mediaPlayer to the new position
                 mediaPlayer.seekTo(newPosition);
             }
         });
@@ -218,6 +294,10 @@ public class MainActivity extends AppCompatActivity {
      * @param currentVolume the current volume of the audio file
      */
     private void setVolume(int currentVolume) {
+
+        // if mediaPlayer is not initialized then do nothing (return)
+        if(mediaPlayer == null) return;
+
         // logarithmic value for the volume
         float volume = 1 - (float) (Math.log(maxVolume-currentVolume)/Math.log(maxVolume));
         mediaPlayer.setVolume(volume, volume);
@@ -228,13 +308,28 @@ public class MainActivity extends AppCompatActivity {
      * This method puts the MainActivity in background and runs it
      * until  killed
      */
-    protected void onPause() {
+    protected void onStop() {
 
-        super.onPause();
+        // free up memory used by the MediaPlayer instance
+        releaseMediaPlayer();
 
-        if(mediaPlayer.isPlaying() || mediaPlayer.getCurrentPosition() != 0) {
-            mediaPlayer.pause();
-            mediaPlayer.seekTo(0);
+        super.onStop();
+    }
+
+
+    /**
+     * This method releases the memory used by the MediaPlayer instance
+     */
+    private void releaseMediaPlayer() {
+
+        // if mediaPlayer is already created
+        if(mediaPlayer != null){
+
+            mediaPlayer.release();
+
+            mediaPlayer = null;
         }
+        // abandon the request for audio focus because is no longer needed
+        audioManager.abandonAudioFocus(audioFocusChangeListener);
     }
 }
